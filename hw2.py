@@ -2,6 +2,9 @@ import string
 import sys
 import math
 
+letter_file = sys.argv[1]
+probEng = float(sys.argv[2])
+probSpan = float(sys.argv[3])
 
 def get_parameter_vectors():
     '''
@@ -69,8 +72,80 @@ def shred(filename):
             boc[c]+=1
     return boc
 
+def safe_log(p: float) -> float:
+    """Natural log with a fallback for p==0 (debug only)."""
+    if p <= 0.0:
+        return -1e8
+    return math.log(p)
 
 
-# TODO: add your code here for the assignment
-# You are free to implement it as you wish!
-# Happy Coding!
+
+def logUnNormPostProb(counts, probs, prior):
+    logPrior = safe_log(prior)
+
+    logSumCountProb = 0
+    for Xi, Pi in zip(counts, probs):
+        if Xi == 0:
+            continue
+
+        logPi = safe_log(Pi)
+        
+        logSumCountProb += Xi * logPi
+    
+    return logPrior + logSumCountProb
+    
+def desiredConProb(lang):
+    FEng = logUnNormPostProb(counts, e, probEng)
+    FSpan = logUnNormPostProb(counts, s, probSpan)
+
+    if lang == "eng":
+        diff = FSpan - FEng
+    else:
+        diff = FEng - FSpan
+    
+    if diff >= 100:
+        return 0
+    elif diff <= -100:
+        return 1
+    else:
+        return 1 / (1 + math.exp(diff))
+
+
+
+e, s = get_parameter_vectors()
+boc = shred(letter_file)
+
+counts = 26 *[0]
+for key, value in boc.items():
+    counts[ord(key) - ord('A')] = value
+
+def question1():
+    print("Q1")
+
+    X1 = counts[0]
+
+    xloge = 0.0 if X1 == 0 else X1 * safe_log(e[0])
+    xlogs = 0.0 if X1 == 0 else X1 * safe_log(s[0])
+
+    print(f"{xloge:.4f}")
+    print(f"{xlogs:.4f}")
+
+def question2():
+    print("Q2")
+
+    totalLogProbE = logUnNormPostProb(counts, e, probEng)
+    totalLogProbS = logUnNormPostProb(counts, s, probSpan)
+
+    print(f"{totalLogProbE:.4f}")
+    print(f"{totalLogProbS:.4f}")
+
+def question3():
+    print("Q3")
+
+    probE = desiredConProb("eng")
+
+    print(f"{probE:.4f}")
+
+question1()
+question2()
+question3()
